@@ -76,6 +76,13 @@ function App() {
   const outputSize = aspectSizes[aspect]
   const profile = motionProfiles[motion]
   const estimatedDuration = Math.max(1, photos.length) * profile.seconds
+  const settingsRef = useRef({
+    outputSize,
+    profile,
+    showMiniMap,
+    orderedLabels: [] as string[],
+    photos: [] as Photo[],
+  })
 
   const orderedLabels = useMemo(
     () => photos.map((photo, index) => photo.label || `Room ${index + 1}`),
@@ -125,25 +132,30 @@ function App() {
   }, [floorPlan])
 
   useEffect(() => {
+    settingsRef.current = { outputSize, profile, showMiniMap, orderedLabels, photos }
+  }, [outputSize, profile, showMiniMap, orderedLabels, photos])
+
+  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     let start = performance.now()
+    let disposed = false
     const drawLoop = (now: number) => {
+      if (disposed) return
       const elapsed = (now - start) / 1000
       drawFrame(ctx, canvas, elapsed, false)
       animationRef.current = requestAnimationFrame(drawLoop)
     }
     animationRef.current = requestAnimationFrame(drawLoop)
     return () => {
+      disposed = true
       if (animationRef.current) cancelAnimationFrame(animationRef.current)
       start = 0
     }
-  // drawFrame is intentionally defined in-component so it sees current upload/object-url state.
-  // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [aspect, motion, showMiniMap, autoPath, photos])
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -256,6 +268,7 @@ function App() {
     elapsed: number,
     exporting: boolean,
   ) {
+    const { outputSize, profile, showMiniMap, orderedLabels, photos } = settingsRef.current
     canvas.width = outputSize.w
     canvas.height = outputSize.h
     const w = canvas.width
