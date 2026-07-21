@@ -141,6 +141,8 @@ function App() {
       if (animationRef.current) cancelAnimationFrame(animationRef.current)
       start = 0
     }
+  // drawFrame is intentionally defined in-component so it sees current upload/object-url state.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [aspect, motion, showMiniMap, autoPath, photos])
 
   useEffect(() => {
